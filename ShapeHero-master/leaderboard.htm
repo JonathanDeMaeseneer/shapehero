@@ -1,0 +1,141 @@
+<html>
+    <head>
+        <title>Shape Hero Leaderboard</title>
+        <script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="css/styleLead.css" />
+    </head>
+    <body>
+        <div class="example-base example-leaderboard l-demo-container">
+            <table id="leaderboardTable">
+                <tr>
+                    <th>Rank</th>
+                    <th align="left">Player</th>
+                    <th align="left">Score</th>
+                    <th align="left">Achievements</th>
+                    
+                </tr>
+            </table>
+        </div>
+        <script>
+            var LEADERBOARD_SIZE = 50;
+
+            // Create our Firebase reference
+            var scoreListRef = new Firebase('https://zu1g1l7h60o.firebaseio-demo.com//scoreList');
+
+            // Keep a mapping of firebase locations to HTML elements, so we can move / remove elements as necessary.
+            var htmlForPath = {};
+
+            // Helper function that takes a new score snapshot and adds an appropriate row to our leaderboard table.
+            var rank = LEADERBOARD_SIZE;
+            function handleScoreAdded(scoreSnapshot, prevScoreName) {
+                
+                var $scoreGCheev = $('<div style="margin-right:4px; display:inline-block; background-image:url(img/achievements/trophy2.png); background-size:100% 100%; height:40px; width:40px;" title="Achievement for getting a score above 6000!"></div>');
+                var $scoreSCheev = $('<div style="margin-right:4px; display:inline-block; background-image:url(img/achievements/trophy3.png); background-size:100% 100%; height:40px; width:40px;" title="Achievement for getting a score above 2500!"></div>');
+				var $scoreBCheev = $('<div style="margin-right:4px; display:inline-block; background-image:url(img/achievements/trophy4.png); background-size:100% 100%; height:40px; width:40px;" title="Achievement for getting a score above 1000!"></div>');
+				var $levelCheev = $('<div style="margin-right:4px; display:inline-block; background-image:url(img/achievements/lvl30.png); background-size:100% 100%; height:40px; width:40px;" title="Achievement for getting to level 30!"></div>');
+                var $streakCheev = $('<div style="margin-right:4px; display:inline-block; background-image:url(img/achievements/x200.png); background-size:100% 100%; height:40px; width:40px;" title="Achievement for getting a streak above 200!"></div>');
+                //ADDING A ROW
+                var newScoreRow = $("<tr/>");
+                
+                newScoreRow.append($("<td/>").append($("<em/>").text(rank)));
+                rank--;
+                //ADDING name
+                newScoreRow.append($("<td/>").append($("<em/>").text(scoreSnapshot.val().name)));
+                //ADDING score
+                newScoreRow.append($("<td/>").text(scoreSnapshot.val().score));
+                //ADDING achievement display logic
+                if(scoreSnapshot.val().score > 1000) {
+					if(scoreSnapshot.val().level > 30) {
+						if(scoreSnapshot.val().streak > 200) {
+							if(scoreSnapshot.val().score > 6000) {
+								newScoreRow.append($("<td align='center'/>").append($scoreGCheev).append($levelCheev).append($streakCheev));
+							} else if (scoreSnapshot.val().score > 2500) {
+								newScoreRow.append($("<td align='center'/>").append($scoreSCheev).append($levelCheev).append($streakCheev));
+							} else {
+								newScoreRow.append($("<td align='center'/>").append($scoreBCheev).append($levelCheev).append($streakCheev));
+							}
+						} else {
+							if(scoreSnapshot.val().score > 6000) {
+								newScoreRow.append($("<td align='center'/>").append($scoreGCheev).append($levelCheev));
+							} else if (scoreSnapshot.val().score > 2500) {
+								newScoreRow.append($("<td align='center'/>").append($scoreSCheev).append($levelCheev));
+							} else {
+								newScoreRow.append($("<td align='center'/>").append($scoreBCheev).append($levelCheev));
+							}
+						}
+					} else {
+						if(scoreSnapshot.val().streak > 200) {
+							if(scoreSnapshot.val().score > 6000) {
+								newScoreRow.append($("<td align='center'/>").append($scoreGCheev).append($streakCheev));
+							} else if (scoreSnapshot.val().score > 2500) {
+								newScoreRow.append($("<td align='center'/>").append($scoreSCheev).append($streakCheev));
+							} else {
+								newScoreRow.append($("<td align='center'/>").append($scoreBCheev).append($streakCheev));
+							}
+						} else {
+							if(scoreSnapshot.val().score > 6000) {
+								newScoreRow.append($("<td align='center'/>").append($scoreGCheev)); 
+							} else if (scoreSnapshot.val().score > 2500) {
+								newScoreRow.append($("<td align='center'/>").append($scoreSCheev)); 
+							} else {
+								newScoreRow.append($("<td align='center'/>").append($scoreBCheev)); ;
+							}
+						}
+					}
+                } else if (scoreSnapshot.val().level > 30){
+					if(scoreSnapshot.val().streak > 200) {
+						newScoreRow.append($("<td align='center'/>").append($levelCheev).append($streakCheev));
+					} else {
+						newScoreRow.append($("<td align='center'/>").append($levelCheev));
+					}
+                } else if (scoreSnapshot.val().streak > 200){
+					newScoreRow.append($("<td align='center'/>").append($streakCheev));
+				} else {
+					newScoreRow.append($("<td/>").append($("<em/>").text("")));
+				}
+                
+                // Store a reference to the table row so we can get it again later.
+                htmlForPath[scoreSnapshot.key()] = newScoreRow;
+
+                // Insert the new score in the appropriate place in the table.
+                if (prevScoreName === null) {
+                    $("#leaderboardTable").append(newScoreRow);
+                }
+                else {
+                    var lowerScoreRow = htmlForPath[prevScoreName];
+                    lowerScoreRow.before(newScoreRow);
+                }
+            }
+
+            // Helper function to handle a score object being removed; just removes the corresponding table row.
+            function handleScoreRemoved(scoreSnapshot) {
+                var removedScoreRow = htmlForPath[scoreSnapshot.key()];
+                removedScoreRow.remove();
+                delete htmlForPath[scoreSnapshot.key()];
+            }
+
+            // Create a view to only receive callbacks for the last LEADERBOARD_SIZE scores
+            var scoreListView = scoreListRef.limitToLast(LEADERBOARD_SIZE);
+
+            // Add a callback to handle when a new score is added.
+            scoreListView.on('child_added', function (newScoreSnapshot, prevScoreName) {
+                handleScoreAdded(newScoreSnapshot, prevScoreName);
+            });
+
+            // Add a callback to handle when a score is removed
+            scoreListView.on('child_removed', function (oldScoreSnapshot) {
+                handleScoreRemoved(oldScoreSnapshot);
+            });
+
+            // Add a callback to handle when a score changes or moves positions.
+            var changedCallback = function (scoreSnapshot, prevScoreName) {
+                handleScoreRemoved(scoreSnapshot);
+                handleScoreAdded(scoreSnapshot, prevScoreName);
+            };
+            scoreListView.on('child_moved', changedCallback);
+            scoreListView.on('child_changed', changedCallback);
+        </script>
+    </body>
+</html>
